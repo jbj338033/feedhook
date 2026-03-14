@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>feedhook</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+    <style>
+        :root { --pico-font-size: 14px; }
+        .tab-bar { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+        .tab-bar button { flex: 1; }
+        .tab-bar button:not(.outline) { font-weight: bold; }
+        .badge-success { color: var(--pico-ins-color); }
+        .badge-failed { color: var(--pico-del-color); }
+        table { font-size: 0.9rem; }
+        td { word-break: break-all; }
+    </style>
+</head>
+<body>
+    <main class="container" x-data="app()">
+        <h1>feedhook</h1>
+
+        <div class="tab-bar">
+            <button @click="tab = 'channels'" :class="tab !== 'channels' && 'outline'">channels</button>
+            <button @click="tab = 'logs'; fetchLogs()" :class="tab !== 'logs' && 'outline'">logs</button>
+            <button @click="tab = 'settings'" :class="tab !== 'settings' && 'outline'">settings</button>
+        </div>
+
+        <!-- Channels -->
+        <div x-show="tab === 'channels'">
+            <form @submit.prevent="addChannel">
+                <div class="grid">
+                    <input type="text" x-model="form.channel_id" placeholder="channel ID (UC...)" required>
+                    <input type="text" x-model="form.channel_name" placeholder="channel name" required>
+                </div>
+                <input type="url" x-model="form.webhook_url" placeholder="discord webhook URL" required>
+                <button type="submit" :disabled="loading">add</button>
+            </form>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>name</th>
+                        <th>channel ID</th>
+                        <th>webhook</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="ch in channels" :key="ch.id">
+                        <tr>
+                            <td x-text="ch.channel_name"></td>
+                            <td x-text="ch.channel_id"></td>
+                            <td x-text="ch.webhook_url.slice(0, 40) + '...'"></td>
+                            <td><button class="outline secondary" @click="deleteChannel(ch.id)">delete</button></td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Logs -->
+        <div x-show="tab === 'logs'">
+            <table>
+                <thead>
+                    <tr>
+                        <th>time</th>
+                        <th>video</th>
+                        <th>status</th>
+                        <th>error</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="log in logs" :key="log.id">
+                        <tr>
+                            <td x-text="log.sent_at"></td>
+                            <td><a :href="'https://youtube.com/watch?v=' + log.video_id" target="_blank" x-text="log.video_id"></a></td>
+                            <td :class="log.status === 'success' ? 'badge-success' : 'badge-failed'" x-text="log.status"></td>
+                            <td x-text="log.error_message || '-'"></td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Settings -->
+        <div x-show="tab === 'settings'">
+            <form @submit.prevent="saveSettings">
+                <label>
+                    polling interval (seconds)
+                    <input type="number" x-model.number="settings.polling_interval" min="60" required>
+                </label>
+                <button type="submit">save</button>
+            </form>
+            <button class="outline" @click="triggerPoll" :disabled="polling">poll now</button>
+        </div>
+    </main>
+    <script src="app.js"></script>
+</body>
+</html>
