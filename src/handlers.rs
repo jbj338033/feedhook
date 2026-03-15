@@ -1,10 +1,10 @@
+use crate::AppState;
 use crate::error::AppError;
 use crate::models::{Channel, CreateChannel, NotificationLog, Settings};
 use crate::poller;
-use crate::AppState;
+use axum::Json;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
-use axum::Json;
 use std::sync::Arc;
 
 pub async fn list_channels(
@@ -45,9 +45,7 @@ pub async fn delete_channel(
     Ok(StatusCode::NO_CONTENT)
 }
 
-pub async fn get_settings(
-    State(state): State<Arc<AppState>>,
-) -> Result<Json<Settings>, AppError> {
+pub async fn get_settings(State(state): State<Arc<AppState>>) -> Result<Json<Settings>, AppError> {
     let row: (String,) =
         sqlx::query_as("SELECT value FROM settings WHERE key = 'polling_interval'")
             .fetch_one(&state.pool)
@@ -79,9 +77,7 @@ pub async fn list_logs(
     Ok(Json(logs))
 }
 
-pub async fn trigger_poll(
-    State(state): State<Arc<AppState>>,
-) -> Result<StatusCode, AppError> {
+pub async fn trigger_poll(State(state): State<Arc<AppState>>) -> Result<StatusCode, AppError> {
     let pool = state.pool.clone();
     let client = state.client.clone();
     tokio::spawn(async move {

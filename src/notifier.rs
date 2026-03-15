@@ -12,12 +12,7 @@ pub struct NewVideo {
     pub published_at: String,
 }
 
-pub async fn send_discord(
-    client: &Client,
-    pool: &SqlitePool,
-    webhook_url: &str,
-    video: &NewVideo,
-) {
+pub async fn send_discord(client: &Client, pool: &SqlitePool, webhook_url: &str, video: &NewVideo) {
     let payload = json!({
         "embeds": [{
             "title": video.title,
@@ -50,7 +45,10 @@ pub async fn send_discord(
                 Err(e) => ("failed".to_string(), Some(e.to_string())),
             }
         }
-        Ok(resp) => ("failed".to_string(), Some(format!("status {}", resp.status()))),
+        Ok(resp) => (
+            "failed".to_string(),
+            Some(format!("status {}", resp.status())),
+        ),
         Err(e) => ("failed".to_string(), Some(e.to_string())),
     };
 

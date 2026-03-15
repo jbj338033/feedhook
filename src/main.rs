@@ -6,10 +6,10 @@ mod models;
 mod notifier;
 mod poller;
 
+use axum::Router;
 use axum::http::header;
 use axum::response::{Html, IntoResponse, Response};
 use axum::routing::{delete, get, post, put};
-use axum::Router;
 use reqwest::Client;
 use rust_embed::Embed;
 use sqlx::SqlitePool;
@@ -33,14 +33,17 @@ async fn main() {
     tracing_subscriber::fmt::init();
 
     let cfg = config::Config::from_env();
-    let pool = db::init(&cfg.database_url).await.expect("failed to init db");
-
-    let interval: u64 = sqlx::query_scalar("SELECT value FROM settings WHERE key = 'polling_interval'")
-        .fetch_one(&pool)
+    let pool = db::init(&cfg.database_url)
         .await
-        .ok()
-        .and_then(|v: String| v.parse().ok())
-        .unwrap_or(300);
+        .expect("failed to init db");
+
+    let interval: u64 =
+        sqlx::query_scalar("SELECT value FROM settings WHERE key = 'polling_interval'")
+            .fetch_one(&pool)
+            .await
+            .ok()
+            .and_then(|v: String| v.parse().ok())
+            .unwrap_or(300);
 
     let (interval_tx, interval_rx) = watch::channel(interval);
     let client = Client::new();

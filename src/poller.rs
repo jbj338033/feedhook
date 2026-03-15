@@ -8,11 +8,7 @@ use std::time::Duration;
 use tokio::sync::watch;
 use tracing::{error, info};
 
-pub async fn run(
-    pool: SqlitePool,
-    client: Client,
-    mut interval_rx: watch::Receiver<u64>,
-) {
+pub async fn run(pool: SqlitePool, client: Client, mut interval_rx: watch::Receiver<u64>) {
     let pool = Arc::new(pool);
     let client = Arc::new(client);
     let mut interval_secs = *interval_rx.borrow();
@@ -62,15 +58,13 @@ async fn poll_channel(
     let feed = parser::parse(&body[..])?;
 
     for entry in &feed.entries {
-        let video_id = entry
-            .id
-            .strip_prefix("yt:video:")
-            .unwrap_or(&entry.id);
+        let video_id = entry.id.strip_prefix("yt:video:").unwrap_or(&entry.id);
 
-        let exists: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM videos WHERE video_id = ?)")
-            .bind(video_id)
-            .fetch_one(pool)
-            .await?;
+        let exists: bool =
+            sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM videos WHERE video_id = ?)")
+                .bind(video_id)
+                .fetch_one(pool)
+                .await?;
 
         if exists {
             continue;
@@ -87,13 +81,15 @@ async fn poll_channel(
             .unwrap_or_else(chrono::Utc::now)
             .to_rfc3339();
 
-        sqlx::query("INSERT INTO videos (channel_id, video_id, title, published_at) VALUES (?, ?, ?, ?)")
-            .bind(&channel.channel_id)
-            .bind(video_id)
-            .bind(&title)
-            .bind(&published_at)
-            .execute(pool)
-            .await?;
+        sqlx::query(
+            "INSERT INTO videos (channel_id, video_id, title, published_at) VALUES (?, ?, ?, ?)",
+        )
+        .bind(&channel.channel_id)
+        .bind(video_id)
+        .bind(&title)
+        .bind(&published_at)
+        .execute(pool)
+        .await?;
 
         info!("new video: {} - {}", channel.channel_name, title);
 
@@ -116,13 +112,15 @@ async fn poll_channel(
 }
 
 pub async fn seed_existing_videos(pool: &SqlitePool, client: &Client, channel_id: &str) {
-    let url = format!(
-        "https://www.youtube.com/feeds/videos.xml?channel_id={channel_id}"
-    );
+    let url = format!("https://www.youtube.com/feeds/videos.xml?channel_id={channel_id}");
 
-    let Ok(resp) = client.get(&url).send().await else { return };
+    let Ok(resp) = client.get(&url).send().await else {
+        return;
+    };
     let Ok(body) = resp.bytes().await else { return };
-    let Ok(feed) = parser::parse(&body[..]) else { return };
+    let Ok(feed) = parser::parse(&body[..]) else {
+        return;
+    };
 
     for entry in &feed.entries {
         let video_id = entry.id.strip_prefix("yt:video:").unwrap_or(&entry.id);
