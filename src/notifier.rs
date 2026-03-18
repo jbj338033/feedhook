@@ -14,18 +14,7 @@ pub struct NewVideo {
 
 pub async fn send_discord(client: &Client, pool: &SqlitePool, webhook_url: &str, video: &NewVideo) {
     let payload = json!({
-        "embeds": [{
-            "title": video.title,
-            "url": format!("https://www.youtube.com/watch?v={}", video.video_id),
-            "color": 0xFF0000,
-            "thumbnail": {
-                "url": format!("https://i.ytimg.com/vi/{}/hqdefault.jpg", video.video_id)
-            },
-            "author": {
-                "name": video.channel_name
-            },
-            "timestamp": video.published_at
-        }]
+        "content": format!("https://www.youtube.com/watch?v={}", video.video_id)
     });
 
     let (status, error_message) = match client.post(webhook_url).json(&payload).send().await {
