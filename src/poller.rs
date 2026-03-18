@@ -99,10 +99,7 @@ async fn poll_channel(
             &channel.webhook_url,
             &NewVideo {
                 video_id: video_id.to_string(),
-                title,
                 channel_id: channel.channel_id.clone(),
-                channel_name: channel.channel_name.clone(),
-                published_at,
             },
         )
         .await;
