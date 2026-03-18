@@ -6,10 +6,7 @@ use tracing::warn;
 
 pub struct NewVideo {
     pub video_id: String,
-    pub title: String,
     pub channel_id: String,
-    pub channel_name: String,
-    pub published_at: String,
 }
 
 pub async fn send_discord(client: &Client, pool: &SqlitePool, webhook_url: &str, video: &NewVideo) {
